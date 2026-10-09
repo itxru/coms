@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from models import UserRole
 
 
 class LoginRequest(BaseModel):
@@ -12,8 +13,9 @@ class LoginResponse(BaseModel):
 
 class CurrentUserResponse(BaseModel):
     id: int
+    name: str
     email: EmailStr
-    role: str
+    role: UserRole
     
     model_config = {
         "from_attributes": True
