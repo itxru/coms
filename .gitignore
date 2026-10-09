@@ -19,6 +19,8 @@
 __pycache__/
 *.py[cod]
 .venv/
+venv/
+.pytest_cache/
 
 # ------------------------------------------------------------
 # Node
@@ -26,3 +28,5 @@ __pycache__/
 node_modules/
 dist/
 build/
+
+.DS_Store
