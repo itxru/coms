@@ -23,8 +23,10 @@ def hash_password(password: str) -> str:
         raise ValueError("Password does not meet the required policy")
     return password_hash.hash(password)
 
+
 def verify_password(password: str, hashed_password: str) -> bool:
     return password_hash.verify(password, hashed_password)
+
 
 def validate_password(password: str) -> bool:
     if len(password) < 8:
@@ -38,6 +40,7 @@ def validate_password(password: str) -> bool:
     if not re.search(r"[^A-Za-z0-9]", password):
         return False
     return True
+
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
