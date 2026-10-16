@@ -1,11 +1,15 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from sqlalchemy import (
+    Date,
     DateTime,
     String,
     Text,
     ForeignKey,
     JSON,
+    Integer,
+    CheckConstraint,
+    UniqueConstraint,
     Enum as SQLEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -162,6 +166,57 @@ class SecurityIncidentAuditLog(Base):
     changes: Mapped[dict] = mapped_column(
         JSON,
         nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+
+class StudentViolationDailySummary(Base):
+    __tablename__ = "student_violation_daily_summaries"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "college",
+            "report_date",
+            name="uq_student_violation_college_date",
+        ),
+        CheckConstraint(
+            "violation_count >= 0",
+            name="ck_student_violation_count_nonnegative",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
+
+    college: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+    )
+
+    report_date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+        index=True,
+    )
+
+    violation_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default="SDU",
     )
 
     created_at: Mapped[datetime] = mapped_column(

@@ -10,6 +10,7 @@ from models import (
     UserRole,
     SecurityIncident,
     IncidentStatus,
+    StudentViolationDailySummary,
 )
 
 router = APIRouter(
@@ -44,8 +45,39 @@ def get_dashboard_overview(
         for incident_status in IncidentStatus
     }
 
-    # Calculate quarterly incident trends for the current year.
+    # PB-014: Student Violation Statistics
+    # Counts are based on daily college summaries received from SDU.
 
+    student_violation_count = (
+        db.scalar(
+            select(
+                func.coalesce(
+                    func.sum(StudentViolationDailySummary.violation_count),
+                    0,
+                )
+            )
+        )
+        or 0
+    )
+
+    violation_rows = db.execute(
+        select(
+            StudentViolationDailySummary.college,
+            func.sum(StudentViolationDailySummary.violation_count).label("total"),
+        )
+        .group_by(StudentViolationDailySummary.college)
+        .order_by(StudentViolationDailySummary.college)
+    ).all()
+
+    violations_by_college = [
+        {
+            "college": college,
+            "violations": int(total),
+        }
+        for college, total in violation_rows
+    ]
+
+    # Calculate quarterly incident trends for the current year.
     current_year = datetime.now().year
 
     incident_trends = []
@@ -134,12 +166,12 @@ def get_dashboard_overview(
         "data_available": True,
         "summary": {
             "security_incidents": security_incident_count,
-            "student_violations": None,
+            "student_violations": int(student_violation_count),
             "gate_pass_verifications": None,
             "service_requests": None,
         },
         "incident_status_counts": incident_status_counts,
         "incident_trends": incident_trends,
-        "violations_by_college": [],
+        "violations_by_college": violations_by_college,
         "recent_operational_records": recent_operational_records,
     }

@@ -92,11 +92,7 @@ export default function ViolationsByCollegeChart({
           <span>
             {isDataAvailable
               ? "College-level analytics will appear when violations are recorded."
-              : "College-level analytics will be available when the Student Violations module is implemented."}
-          </span>
-
-          <span>
-            College-level analytics will appear when records are available.
+              : "Unable to retrieve student violation statistics."}
           </span>
         </div>
       )}

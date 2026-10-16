@@ -68,6 +68,7 @@ def test_dashboard_incident_totals_and_status_breakdown():
         3,  # Under Investigation
         4,  # Resolved
         2,  # Closed
+        0,  # PB-014: Total student violations
         0,
         0,  # Q1 incidents, resolved
         0,
