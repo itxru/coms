@@ -14,13 +14,63 @@ import {
 } from "../services/authService";
 
 import { AuthContext } from "./authContext";
-
 import { getTokenExpiration, isTokenExpired } from "../utils/token";
+
+const AUTH_TOKEN_KEY = "coms_auth_token";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("unauthenticated");
+  const [token, setToken] = useState<string | null>(() => {
+    const savedToken = sessionStorage.getItem(AUTH_TOKEN_KEY);
+
+    if (!savedToken) {
+      return null;
+    }
+
+    if (isTokenExpired(savedToken)) {
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      return null;
+    }
+
+    return savedToken;
+  });
+  const [status, setStatus] = useState<AuthStatus>("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreSession() {
+      if (!token) {
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
+        setStatus("unauthenticated");
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser(token);
+
+        if (!cancelled) {
+          setUser(currentUser);
+          setStatus("authenticated");
+        }
+      } catch {
+        if (!cancelled) {
+          sessionStorage.removeItem(AUTH_TOKEN_KEY);
+          setToken(null);
+          setUser(null);
+          setStatus("unauthenticated");
+        }
+      }
+    }
+
+    void restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+    // Run only when the provider initializes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signIn = useCallback(async (credentials: LoginRequest) => {
     setStatus("loading");
@@ -36,10 +86,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // from the backend rather than trusting frontend input.
       const currentUser = await getCurrentUser(response.access_token);
 
+      sessionStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
+
       setToken(response.access_token);
       setUser(currentUser);
       setStatus("authenticated");
     } catch (error) {
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
       setToken(null);
       setUser(null);
       setStatus("unauthenticated");
@@ -49,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     const currentToken = token;
-
+    sessionStorage.removeItem(AUTH_TOKEN_KEY);
     // Clear the local session even if the backend request fails.
     setToken(null);
     setUser(null);
@@ -74,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const timeoutId = window.setTimeout(
       () => {
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
         setToken(null);
         setUser(null);
         setStatus("unauthenticated");
