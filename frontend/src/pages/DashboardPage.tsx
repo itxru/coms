@@ -14,6 +14,7 @@ import IncidentTrendChart from "../components/dashboard/IncidentTrendChart";
 import ViolationsByCollegeChart from "../components/dashboard/ViolationsByCollegeChart";
 import RecentOperationalRecords from "../components/dashboard/RecentOperationalRecords";
 import StudentDashboard from "../components/dashboard/StudentDashboard";
+import PendingActions from "../components/dashboard/PendingActions";
 
 import { useAuth } from "../contexts/useAuth";
 
@@ -32,6 +33,8 @@ function OperationalDashboard({
   role: "admin" | "staff";
 }) {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +105,55 @@ function OperationalDashboard({
           {error}
         </div>
       )}
+
+      {/* Dashboard date-range filter */}
+      <section
+        className="coms-dashboard-date-filter"
+        aria-label="Dashboard date range"
+      >
+        <div>
+          <h2>Date Range</h2>
+          <p>Select a reporting period for dashboard records.</p>
+        </div>
+
+        <div className="coms-dashboard-date-controls">
+          <label>
+            From
+            <input
+              type="date"
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(event) => setStartDate(event.target.value)}
+            />
+          </label>
+
+          <label>
+            To
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => setEndDate(event.target.value)}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => {
+              setStartDate("");
+              setEndDate("");
+            }}
+            disabled={!startDate && !endDate}
+          >
+            Clear
+          </button>
+        </div>
+
+        <p className="coms-dashboard-filter-note">
+          Date filtering is not yet applied to dashboard statistics.
+          Reporting-period integration will be added separately.
+        </p>
+      </section>
 
       {/* Dashboard summary cards */}
       <section
@@ -180,13 +232,18 @@ function OperationalDashboard({
 
         <ViolationsByCollegeChart
           data={overview?.violations_by_college ?? []}
+          isDataAvailable={overview?.summary.student_violations != null}
         />
       </section>
 
       {/* Recent operational records */}
+      {/* Recent operational records */}
       <RecentOperationalRecords
         records={overview?.recent_operational_records ?? []}
       />
+
+      {/* Pending actions */}
+      <PendingActions actions={[]} />
     </div>
   );
 }

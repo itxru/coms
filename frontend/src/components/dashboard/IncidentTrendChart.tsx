@@ -33,7 +33,10 @@ export default function IncidentTrendChart({
       <div className="coms-chart-header">
         <div>
           <h2>{title}</h2>
-          <p>Recorded incidents and resolved cases by quarter</p>
+          <p>
+            Incidents by occurrence quarter, including cases currently resolved
+            or closed
+          </p>
         </div>
       </div>
 

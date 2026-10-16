@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/useAuth";
 
 type TopbarProps = {
   onMenuClick: () => void;
+  isMenuOpen: boolean;
 };
 
 const roleLabels = {
@@ -12,7 +13,7 @@ const roleLabels = {
   user_student: "Student",
 };
 
-export default function Topbar({ onMenuClick }: TopbarProps) {
+export default function Topbar({ onMenuClick, isMenuOpen }: TopbarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -31,7 +32,11 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
           type="button"
           className="coms-menu-button"
           onClick={onMenuClick}
-          aria-label="Open navigation menu"
+          aria-label={
+            isMenuOpen ? "Close navigation menu" : "Open navigation menu"
+          }
+          aria-expanded={isMenuOpen}
+          aria-controls="coms-sidebar-navigation"
         >
           <Menu size={21} />
         </button>

@@ -16,8 +16,26 @@ type RecentOperationalRecordsProps = {
 function formatRecordedDate(value: string): string {
   if (!value) return "—";
 
-  // Backend timestamps without timezone information are
-  // displayed as recorded, without applying a timezone shift.
+  // Timezone-aware timestamps are converted to Philippine time.
+  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+
+  if (hasTimezone) {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return value;
+
+    return new Intl.DateTimeFormat("en-PH", {
+      timeZone: "Asia/Manila",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+  }
+
+  // Timezone-naive backend timestamps are displayed as recorded.
   const [datePart, timePart] = value.split("T");
 
   if (!datePart || !timePart) return value;
