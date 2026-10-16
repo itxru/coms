@@ -168,6 +168,8 @@ function OperationalDashboard({
               description="Recorded security incidents"
               icon={ShieldAlert}
               color="red"
+              isLoading={isLoading}
+              hasError={error !== null}
             />
 
             {overview?.incident_status_counts && (
@@ -204,6 +206,8 @@ function OperationalDashboard({
           description="Recorded student violations"
           icon={GraduationCap}
           color="yellow"
+          isLoading={isLoading}
+          hasError={error !== null}
         />
 
         <StatCard
@@ -212,6 +216,8 @@ function OperationalDashboard({
           description="Verified gate pass records"
           icon={FileCheck2}
           color="blue"
+          isLoading={isLoading}
+          hasError={error !== null}
         />
 
         <StatCard
@@ -220,6 +226,8 @@ function OperationalDashboard({
           description="Security service requests"
           icon={ClipboardList}
           color="green"
+          isLoading={isLoading}
+          hasError={error !== null}
         />
       </section>
 
