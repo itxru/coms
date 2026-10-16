@@ -1,23 +1,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../contexts/useAuth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const locationState = location.state as {
-    from?: { pathname?: string };
-  } | null;
-  const requestedPath = locationState?.from?.pathname;
-  const redirectTo =
-    requestedPath &&
-    requestedPath.startsWith("/") &&
-    !requestedPath.startsWith("//")
-      ? requestedPath
-      : "/dashboard";
   const { signIn, isAuthenticated, status } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -32,7 +20,7 @@ export default function LoginPage() {
 
     try {
       await signIn({ email, password });
-      navigate(redirectTo, { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(
         err instanceof Error
@@ -43,7 +31,7 @@ export default function LoginPage() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
