@@ -8,6 +8,7 @@ import ForbiddenPage from "./pages/ForbiddenPage";
 import StudentPage from "./pages/StudentPage";
 import StaffPage from "./pages/StaffPage";
 import AdminPage from "./pages/AdminPage";
+import SecurityIncidentsPage from "./pages/SecurityIncidentsPage";
 
 function App() {
   return (
@@ -19,6 +20,14 @@ function App() {
       {/* Accessible to all authenticated users */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+      </Route>
+
+      {/* Security operations — Admin and Staff only */}
+      <Route element={<ProtectedRoute allowedRoles={["admin", "staff"]} />}>
+        <Route
+          path="/operations/incidents"
+          element={<SecurityIncidentsPage />}
+        />
       </Route>
 
       {/* Admin-only routes */}
