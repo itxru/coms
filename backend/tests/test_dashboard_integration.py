@@ -1,4 +1,5 @@
-from datetime import datetime
+from sqlalchemy.exc import IntegrityError
+from datetime import date, datetime
 from uuid import uuid4
 
 import pytest
@@ -10,7 +11,13 @@ from sqlalchemy.pool import StaticPool
 
 from core.dependencies import get_current_user
 from database import Base, get_db
-from models import IncidentStatus, SecurityIncident, User, UserRole
+from models import (
+    IncidentStatus,
+    SecurityIncident,
+    StudentViolationDailySummary,
+    User,
+    UserRole,
+)
 from routers.dashboard import router as dashboard_router
 
 
@@ -167,3 +174,197 @@ def test_dashboard_statistics_after_status_update(dashboard_test_environment):
     assert data["incident_status_counts"]["open"] == 0
     assert data["incident_status_counts"]["resolved"] == 1
     assert sum(data["incident_status_counts"].values()) == 1
+
+
+def test_dashboard_student_violations_empty_database(
+    dashboard_test_environment,
+):
+    client, _, _ = dashboard_test_environment
+
+    response = client.get("/dashboard/overview")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["summary"]["student_violations"] == 0
+    assert data["violations_by_college"] == []
+
+
+def test_dashboard_student_violations_by_college(
+    dashboard_test_environment,
+):
+    client, engine, _ = dashboard_test_environment
+
+    summaries = [
+        ("CCIS", date(2026, 10, 1), 5),
+        ("CCIS", date(2026, 10, 2), 3),
+        ("CEA", date(2026, 10, 1), 4),
+        ("CIT", date(2026, 10, 1), 2),
+    ]
+
+    with Session(engine) as session:
+        for college, report_date, count in summaries:
+            session.add(
+                StudentViolationDailySummary(
+                    college=college,
+                    report_date=report_date,
+                    violation_count=count,
+                    source="SDU",
+                )
+            )
+
+        session.commit()
+
+    response = client.get("/dashboard/overview")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["summary"]["student_violations"] == 14
+
+    assert data["violations_by_college"] == [
+        {"college": "CCIS", "violations": 8},
+        {"college": "CEA", "violations": 4},
+        {"college": "CIT", "violations": 2},
+    ] or sorted(
+        data["violations_by_college"],
+        key=lambda item: item["college"],
+    ) == [
+        {"college": "CEA", "violations": 4},
+        {"college": "CCIS", "violations": 8},
+        {"college": "CIT", "violations": 2},
+    ]
+
+    # Student violations must not affect incident totals.
+    assert data["summary"]["security_incidents"] == 0
+
+
+def test_dashboard_student_violations_across_quarters(
+    dashboard_test_environment,
+):
+    client, engine, _ = dashboard_test_environment
+
+    with Session(engine) as session:
+        session.add_all(
+            [
+                StudentViolationDailySummary(
+                    college="CCIS",
+                    report_date=date(2026, 3, 31),
+                    violation_count=10,
+                    source="SDU",
+                ),
+                StudentViolationDailySummary(
+                    college="CCIS",
+                    report_date=date(2026, 4, 1),
+                    violation_count=7,
+                    source="SDU",
+                ),
+                StudentViolationDailySummary(
+                    college="CEA",
+                    report_date=date(2026, 10, 1),
+                    violation_count=3,
+                    source="SDU",
+                ),
+            ]
+        )
+        session.commit()
+
+    response = client.get("/dashboard/overview")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    # PB-014 totals include all reporting dates.
+    assert data["summary"]["student_violations"] == 20
+
+    breakdown = {
+        item["college"]: item["violations"] for item in data["violations_by_college"]
+    }
+
+    assert breakdown == {
+        "CCIS": 17,
+        "CEA": 3,
+    }
+
+
+def test_student_violation_duplicate_college_date(
+    dashboard_test_environment,
+):
+    _, engine, _ = dashboard_test_environment
+
+    with Session(engine) as session:
+        session.add_all(
+            [
+                StudentViolationDailySummary(
+                    college="CCIS",
+                    report_date=date(2026, 10, 1),
+                    violation_count=5,
+                    source="SDU",
+                ),
+                StudentViolationDailySummary(
+                    college="CCIS",
+                    report_date=date(2026, 10, 1),
+                    violation_count=3,
+                    source="SDU",
+                ),
+            ]
+        )
+
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+        session.rollback()
+
+
+def test_student_violation_negative_count(
+    dashboard_test_environment,
+):
+    _, engine, _ = dashboard_test_environment
+
+    with Session(engine) as session:
+        session.add(
+            StudentViolationDailySummary(
+                college="CEA",
+                report_date=date(2026, 10, 1),
+                violation_count=-1,
+                source="SDU",
+            )
+        )
+
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+        session.rollback()
+
+
+def test_student_violation_same_date_different_colleges(
+    dashboard_test_environment,
+):
+    client, engine, _ = dashboard_test_environment
+
+    with Session(engine) as session:
+        session.add_all(
+            [
+                StudentViolationDailySummary(
+                    college="CCIS",
+                    report_date=date(2026, 10, 1),
+                    violation_count=5,
+                    source="SDU",
+                ),
+                StudentViolationDailySummary(
+                    college="CEA",
+                    report_date=date(2026, 10, 1),
+                    violation_count=4,
+                    source="SDU",
+                ),
+            ]
+        )
+        session.commit()
+
+    response = client.get("/dashboard/overview")
+
+    assert response.status_code == 200
+    assert response.json()["summary"]["student_violations"] == 9
