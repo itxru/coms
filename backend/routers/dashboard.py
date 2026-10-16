@@ -106,28 +106,29 @@ def get_dashboard_overview(
             }
         )
 
-        # Retrieve the five most recently reported security incidents.
-        recent_incidents = db.scalars(
-            select(SecurityIncident)
-            .order_by(
-                SecurityIncident.reported_at.desc(),
-                SecurityIncident.id.desc(),
-            )
-            .limit(5)
-        ).all()
+    # Retrieve the five most recently reported security incidents.
+    # This query runs once, after calculating all four quarters.
+    recent_incidents = db.scalars(
+        select(SecurityIncident)
+        .order_by(
+            SecurityIncident.reported_at.desc(),
+            SecurityIncident.id.desc(),
+        )
+        .limit(5)
+    ).all()
 
-        # Format incidents for the Recent Operational Records table.
-        recent_operational_records = [
-            {
-                "id": f"incident-{incident.id}",
-                "reference": incident.incident_number,
-                "category": "Security Incident",
-                "description": incident.title,
-                "status": incident.status.value.replace("_", " ").title(),
-                "recordedAt": incident.reported_at.isoformat(),
-            }
-            for incident in recent_incidents
-        ]
+    # Format incidents for the Recent Operational Records table.
+    recent_operational_records = [
+        {
+            "id": f"incident-{incident.id}",
+            "reference": incident.incident_number,
+            "category": "Security Incident",
+            "description": incident.title,
+            "status": incident.status.value.replace("_", " ").title(),
+            "recordedAt": incident.reported_at.isoformat(),
+        }
+        for incident in recent_incidents
+    ]
 
     return {
         "data_available": True,

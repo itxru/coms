@@ -32,17 +32,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
       )}
       {/* Sidebar navigation */}
       <aside
+        id="coms-sidebar-navigation"
         className={`coms-sidebar ${isMenuOpen ? "coms-sidebar-open" : ""}`}
       >
         {/* COMS sidebar will be added here */}
-        <Sidebar />
+        <Sidebar onNavigate={() => setIsMenuOpen(false)} />
       </aside>
 
       {/* Main dashboard area */}
       <div className="coms-main-wrapper">
         <header className="coms-topbar">
           {/* Dashboard top navigation will be added here */}
-          <Topbar onMenuClick={() => setIsMenuOpen((previous) => !previous)} />
+          <Topbar
+            onMenuClick={() => setIsMenuOpen((previous) => !previous)}
+            isMenuOpen={isMenuOpen}
+          />
         </header>
 
         <main className="coms-main-content">{children}</main>

@@ -16,6 +16,7 @@ export type ViolationCollegeData = {
 
 type ViolationsByCollegeChartProps = {
   data: ViolationCollegeData[];
+  isDataAvailable: boolean;
 };
 
 const CHART_COLORS = [
@@ -31,6 +32,7 @@ const CHART_COLORS = [
 
 export default function ViolationsByCollegeChart({
   data,
+  isDataAvailable,
 }: ViolationsByCollegeChartProps) {
   const hasData = data.some((item) => item.violations > 0);
 
@@ -81,7 +83,17 @@ export default function ViolationsByCollegeChart({
         <div className="coms-chart-empty">
           <ChartPie size={32} strokeWidth={1.5} aria-hidden="true" />
 
-          <p>No violation data available</p>
+          <p>
+            {isDataAvailable
+              ? "No student violations recorded"
+              : "Student violation data unavailable"}
+          </p>
+
+          <span>
+            {isDataAvailable
+              ? "College-level analytics will appear when violations are recorded."
+              : "College-level analytics will be available when the Student Violations module is implemented."}
+          </span>
 
           <span>
             College-level analytics will appear when records are available.
