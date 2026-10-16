@@ -172,31 +172,39 @@ function OperationalDashboard({
               hasError={error !== null}
             />
 
-            {overview?.incident_status_counts && (
-              <div className="incident-status-summary">
-                <div>
-                  <span>Open</span>
-                  <strong>{overview.incident_status_counts.open}</strong>
-                </div>
+            <div className="incident-status-summary" aria-busy={isLoading}>
+              {isLoading ? (
+                <p role="status">Loading incident statistics...</p>
+              ) : error ? (
+                <p role="alert">Incident statistics unavailable.</p>
+              ) : overview?.incident_status_counts ? (
+                <>
+                  <div>
+                    <span>Open</span>
+                    <strong>{overview.incident_status_counts.open}</strong>
+                  </div>
 
-                <div>
-                  <span>Under Investigation</span>
-                  <strong>
-                    {overview.incident_status_counts.under_investigation}
-                  </strong>
-                </div>
+                  <div>
+                    <span>Under Investigation</span>
+                    <strong>
+                      {overview.incident_status_counts.under_investigation}
+                    </strong>
+                  </div>
 
-                <div>
-                  <span>Resolved</span>
-                  <strong>{overview.incident_status_counts.resolved}</strong>
-                </div>
+                  <div>
+                    <span>Resolved</span>
+                    <strong>{overview.incident_status_counts.resolved}</strong>
+                  </div>
 
-                <div>
-                  <span>Closed</span>
-                  <strong>{overview.incident_status_counts.closed}</strong>
-                </div>
-              </div>
-            )}
+                  <div>
+                    <span>Closed</span>
+                    <strong>{overview.incident_status_counts.closed}</strong>
+                  </div>
+                </>
+              ) : (
+                <p>Incident statistics are not available.</p>
+              )}
+            </div>
           </div>
         </div>
 
